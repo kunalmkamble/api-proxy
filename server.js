@@ -14,20 +14,31 @@ app.use((req, res, next) => {
 
 // Create a generic proxy server
 const proxy = httpProxy.createProxyServer({
-    target: 'http://localhost:1337',
+    target: 'https://api.example.com',
     changeOrigin: true,
     secure: false, // This line may help, but it's not recommended for production
     protocol: 'https:',
 });
 
+// Log requests
+app.use((req, res, next) => {
+    console.log(`Received request: ${req.method} ${req.url}`);
+    next();
+});
+
 // Handle proxy requests
 app.use('/proxy', (req, res) => {
-    proxy.web(req, res);
+    // Forward headers
+    const targetHeaders = {
+        ...req.headers,
+    };
+
+    proxy.web(req, res, { target: 'https://api.example.com', headers: targetHeaders });
 });
 
 // Log proxy errors
 proxy.on('error', (err, req, res) => {
-    console.error(err);
+    console.error(`Proxy Error: ${err.message}`);
     res.status(500).send('Proxy Error');
 });
 
